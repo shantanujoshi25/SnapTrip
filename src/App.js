@@ -50,9 +50,29 @@ function Navbar({ mode, toggleTheme }) {
       }}
     >
       <Toolbar sx={{ maxWidth: 1100, mx: "auto", width: "100%" }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          SnapTrip
-        </Typography>
+        <Link
+          component={RouterLink}
+          to="/"
+          underline="none"
+          sx={{
+            cursor: "pointer",
+            "&:hover": {
+              opacity: 0.8,
+            },
+          }}
+        >
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 700,
+              background: "linear-gradient(135deg, #6A5ACD, #8A7CFF)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            SnapTrip
+          </Typography>
+        </Link>
 
         <Box sx={{ flexGrow: 1 }} />
 
@@ -88,13 +108,19 @@ function NavLink({ label, to }) {
       to={to}
       underline="none"
       sx={{
-        fontSize: 15,
-        fontWeight: active ? 700 : 400,
-        opacity: active ? 1 : 0.6,
+        fontSize: 18,
+        fontWeight: active ? 700 : 500,
+        opacity: active ? 1 : 0.7,
         borderBottom: active ? "2px solid currentColor" : "2px solid transparent",
         pb: active ? "2px" : 0,
-        transition: "0.25s ease",
-        "&:hover": { opacity: 1 },
+        transition: "all 0.3s ease",
+        "&:hover": {
+          opacity: 1,
+          textShadow: active
+            ? "0 0 20px rgba(106, 90, 205, 0.8), 0 0 30px rgba(106, 90, 205, 0.6)"
+            : "0 0 20px rgba(106, 90, 205, 0.8), 0 0 30px rgba(106, 90, 205, 0.6)",
+          transform: "translateY(-1px)",
+        },
       }}
     >
       {label}
