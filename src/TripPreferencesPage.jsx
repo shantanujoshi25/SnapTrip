@@ -1,4 +1,4 @@
-// TripPreferencesPage.jsx (CLEAN VERSION WITHOUT DESTINATION OR DATES)
+// TripPreferencesPage.jsx (FINAL VERSION WITH DESTINATION + DATES + AI CUSTOMIZATION)
 import React, { useState } from "react";
 import {
   Box,
@@ -13,8 +13,10 @@ import {
   Checkbox,
   Card,
   Divider,
-  useTheme
+  useTheme,
+  TextField
 } from "@mui/material";
+
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { usePreferences } from "./PreferencesContext";
@@ -41,7 +43,13 @@ export default function TripPreferencesPage() {
   const theme = useTheme();
   const navigate = useNavigate();
 
+  // NEW FIELDS
+  const [destination, setDestination] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [customNotes, setCustomNotes] = useState("");
 
+  // EXISTING FIELDS
   const [tripPace, setTripPace] = useState("balanced");
   const [interests, setInterests] = useState([]);
   const [budget, setBudget] = useState(2);
@@ -60,61 +68,48 @@ export default function TripPreferencesPage() {
     );
   };
 
+  // JSON PAYLOAD BUILDER
+  const buildPayload = () => {
+    return {
+      tripDetails: {
+        destination,
+        startDate,
+        endDate,
+      },
+      userPreferences: {
+        tripPace,
+        interests,
+        budgetLevel: budget,
+        accessibility: {
+          walkableRoutes: accessibility.walkable,
+          wheelchairFriendly: accessibility.wheelchair,
+          avoidStairs: accessibility.noStairs,
+        },
+        groupType,
+      },
+      customAIInstructions: customNotes,
+    };
+  };
+
+  // WHEN USER CLICKS CONTINUE
   const handleContinue = () => {
-  setPreferences({
-    tripPace,
-    interests,
-    budget,
-    accessibility,
-    groupType,
-  });
+    const payload = buildPayload();
 
-  console.log("Saved preferences:", {
-    tripPace,
-    interests,
-    budget,
-    accessibility,
-    groupType,
-  });
-  const payload = buildPayload();  // NEW
+    // Save to global context
+    setPreferences(payload);
 
-  setPreferences(payload.userPreferences);
+    console.log("JSON Payload:", JSON.stringify(payload, null, 2));
 
-  console.log("JSON Payload Sent to Backend:", JSON.stringify(payload, null, 2));
-
-
-  navigate("/itinerary"); // <-- MOVE TO ITINERARY PAGE
-};
-
+    navigate("/itinerary");
+  };
 
   const glassBg =
     theme.palette.mode === "dark"
       ? "linear-gradient(135deg, rgba(10,12,40,0.90), rgba(35,38,90,0.92))"
       : "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(238,242,255,0.96))";
 
-    const buildPayload = () => {
-  return {
-    userPreferences: {
-      tripPace: tripPace,
-      interests: interests,
-      budgetLevel: budget,
-      accessibility: {
-        walkableRoutes: accessibility.walkable,
-        wheelchairFriendly: accessibility.wheelchair,
-        avoidStairs: accessibility.noStairs,
-      },
-      groupType: groupType,
-    }
-  };
-};
-
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-      style={{ width: "100%" }}
-    >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
       <Box
         sx={{
           minHeight: "100vh",
@@ -127,7 +122,7 @@ export default function TripPreferencesPage() {
           overflow: "hidden",
         }}
       >
-        {/* MOVING BACKGROUND CIRCLE 1 */}
+        {/* BACKGROUND ANIMATIONS */}
         <motion.div
           style={{
             position: "absolute",
@@ -141,18 +136,10 @@ export default function TripPreferencesPage() {
             opacity: 0.35,
             zIndex: 0,
           }}
-          animate={{
-            x: [0, 40, -30, 0],
-            y: [0, -25, 25, 0],
-          }}
-          transition={{
-            duration: 18,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+          animate={{ x: [0, 40, -30, 0], y: [0, -25, 25, 0] }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
         />
 
-        {/* MOVING BACKGROUND CIRCLE 2 */}
         <motion.div
           style={{
             position: "absolute",
@@ -166,18 +153,11 @@ export default function TripPreferencesPage() {
             opacity: 0.25,
             zIndex: 0,
           }}
-          animate={{
-            x: [0, -30, 30, 0],
-            y: [0, 20, -20, 0],
-          }}
-          transition={{
-            duration: 22,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+          animate={{ x: [0, -30, 30, 0], y: [0, 20, -20, 0] }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
         />
 
-        {/* MAIN GLASS CARD */}
+        {/* MAIN CARD */}
         <Card
           elevation={10}
           sx={{
@@ -186,31 +166,69 @@ export default function TripPreferencesPage() {
             borderRadius: 4,
             px: { xs: 3, md: 5 },
             py: { xs: 3, md: 4 },
-            position: "relative",
             zIndex: 1,
             backdropFilter: "blur(22px)",
             background: glassBg,
-            border:
-              theme.palette.mode === "dark"
-                ? "1px solid rgba(255,255,255,0.12)"
-                : "1px solid rgba(120,130,255,0.20)",
-            boxShadow:
-              theme.palette.mode === "dark"
-                ? "0 24px 60px rgba(0,0,0,0.65)"
-                : "0 20px 50px rgba(74,98,220,0.25)",
           }}
         >
           <Typography variant="overline" sx={{ opacity: 0.75 }}>
             STEP 2
           </Typography>
 
-          <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>
+          <Typography variant="h4" fontWeight={700} sx={{ mb: 3 }}>
             Trip Preferences
           </Typography>
 
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-            Tell us how you like to travel. We’ll generate a personalized itinerary based on your style.
-          </Typography>
+          {/* DESTINATION */}
+          <TextField
+            label="Destination"
+            placeholder="Where do you want to go?"
+            fullWidth
+            value={destination}
+            onChange={(e) => setDestination(e.target.value)}
+            sx={{ mb: 3 }}
+          />
+
+          {/* DATES */}
+          <TextField
+            label="Start Date"
+            type="date"
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            sx={{ mb: 3 }}
+          />
+
+          <TextField
+            label="End Date"
+            type="date"
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            sx={{ mb: 4 }}
+          />
+
+          {/* CUSTOM AI NOTES */}
+          <Section title="Customize your trip using AI" subtitle="Optional: Additional preferences, constraints, or instructions.">
+            <TextField
+              placeholder="Example: Avoid early mornings, add beaches, prefer vegetarian restaurants..."
+              multiline
+              minRows={3}
+              fullWidth
+              value={customNotes}
+              onChange={(e) => setCustomNotes(e.target.value)}
+              sx={{
+                mb: 3,
+                background: "rgba(255,255,255,0.35)",
+                borderRadius: "12px",
+                "& .MuiInputBase-root": { backdropFilter: "blur(6px)" },
+              }}
+            />
+          </Section>
+
+          <Divider sx={{ my: 3 }} />
 
           {/* TRIP PACE */}
           <Section title="Trip pace">
@@ -220,13 +238,7 @@ export default function TripPreferencesPage() {
               onChange={(e, v) => v && setTripPace(v)}
               sx={{
                 flexWrap: "wrap",
-                "& .MuiToggleButton-root": {
-                  px: 3,
-                  py: 1.2,
-                  m: 0.5,
-                  borderRadius: "999px",
-                  textTransform: "none",
-                },
+                "& .MuiToggleButton-root": { px: 3, py: 1.2, m: 0.5, borderRadius: "999px" },
               }}
             >
               <ToggleButton value="relaxed">Relaxed</ToggleButton>
@@ -235,7 +247,7 @@ export default function TripPreferencesPage() {
             </ToggleButtonGroup>
           </Section>
 
-          <Divider sx={{ my: 3, opacity: 0.5 }} />
+          <Divider sx={{ my: 3 }} />
 
           {/* INTERESTS */}
           <Section title="Interests" subtitle="Pick a few things you enjoy.">
@@ -254,12 +266,7 @@ export default function TripPreferencesPage() {
                     backgroundColor: interests.includes(item.label)
                       ? theme.palette.primary.main
                       : "rgba(255,255,255,0.1)",
-                    color: interests.includes(item.label)
-                      ? "#fff"
-                      : theme.palette.text.primary,
-                    border: interests.includes(item.label)
-                      ? "1px solid rgba(255,255,255,0.4)"
-                      : "1px solid rgba(255,255,255,0.2)",
+                    color: interests.includes(item.label) ? "#fff" : theme.palette.text.primary,
                     transition: "0.25s",
                     "&:hover": { transform: "scale(1.05)" },
                   }}
@@ -268,7 +275,7 @@ export default function TripPreferencesPage() {
             </Box>
           </Section>
 
-          <Divider sx={{ my: 3, opacity: 0.5 }} />
+          <Divider sx={{ my: 3 }} />
 
           {/* BUDGET */}
           <Section title="Budget level">
@@ -287,14 +294,14 @@ export default function TripPreferencesPage() {
             />
           </Section>
 
-          <Divider sx={{ my: 3, opacity: 0.5 }} />
+          <Divider sx={{ my: 3 }} />
 
           {/* ACCESSIBILITY */}
           <Section title="Accessibility options">
             <FormGroup>
               {[
                 { label: "Prefer walkable routes", key: "walkable" },
-                { label: "Wheelchair-friendly where possible", key: "wheelchair" },
+                { label: "Wheelchair-friendly", key: "wheelchair" },
                 { label: "Avoid long staircases", key: "noStairs" },
               ].map((item) => (
                 <FormControlLabel
@@ -303,10 +310,7 @@ export default function TripPreferencesPage() {
                     <Checkbox
                       checked={accessibility[item.key]}
                       onChange={(e) =>
-                        setAccessibility({
-                          ...accessibility,
-                          [item.key]: e.target.checked,
-                        })
+                        setAccessibility({ ...accessibility, [item.key]: e.target.checked })
                       }
                     />
                   }
@@ -316,7 +320,7 @@ export default function TripPreferencesPage() {
             </FormGroup>
           </Section>
 
-          <Divider sx={{ my: 3, opacity: 0.5 }} />
+          <Divider sx={{ my: 3 }} />
 
           {/* GROUP TYPE */}
           <Section title="Who are you traveling with?">
@@ -326,12 +330,7 @@ export default function TripPreferencesPage() {
               onChange={(e, v) => v && setGroupType(v)}
               sx={{
                 flexWrap: "wrap",
-                "& .MuiToggleButton-root": {
-                  px: 3,
-                  py: 1.2,
-                  m: 0.5,
-                  borderRadius: "999px",
-                },
+                "& .MuiToggleButton-root": { px: 3, py: 1.2, m: 0.5, borderRadius: "999px" },
               }}
             >
               <ToggleButton value="solo">Solo</ToggleButton>
@@ -351,9 +350,7 @@ export default function TripPreferencesPage() {
                 py: 1.4,
                 borderRadius: "999px",
                 background: "linear-gradient(135deg, #6A5ACD, #7C8CFF)",
-                "&:hover": {
-                  background: "linear-gradient(135deg, #5A4BC0, #6A7CFF)",
-                },
+                "&:hover": { background: "linear-gradient(135deg, #5A4BC0, #6A7CFF)" },
               }}
             >
               Continue to itinerary
@@ -365,12 +362,11 @@ export default function TripPreferencesPage() {
   );
 }
 
+/* REUSABLE SECTION COMPONENT */
 function Section({ title, subtitle, children }) {
   return (
     <Box sx={{ mb: 2 }}>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-        {title}
-      </Typography>
+      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{title}</Typography>
       {subtitle && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
           {subtitle}

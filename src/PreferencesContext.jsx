@@ -5,15 +5,17 @@ const PreferencesContext = createContext();
 
 export function PreferencesProvider({ children }) {
   const [preferences, setPreferences] = useState({
-    destination: "",
-    startDate: "",
-    endDate: "",
-    tripPace: "",
-    interests: [],
-    budget: 2,
-    accessibility: {},
-    groupType: "",
-  });
+  destination: "",
+  startDate: "",
+  endDate: "",
+  tripPace: "",
+  interests: [],
+  budget: 2,
+  accessibility: {},
+  groupType: "",
+  customAIInstructions: "",
+});
+
 
   return (
     <PreferencesContext.Provider value={{ preferences, setPreferences }}>
