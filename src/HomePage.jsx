@@ -1,3 +1,5 @@
+import SavedTripsSection from "./SavedTripsSection";
+
 import { Box, Typography, Button, Card, useTheme } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -152,7 +154,7 @@ export default function HomePage() {
                 repeat: Infinity,
                 ease: "easeInOut",
                 delay: 0.5,
-              }
+              },
             }}
           >
             <Box
@@ -163,7 +165,10 @@ export default function HomePage() {
                 width: { xs: 360, md: 520 },
                 height: "auto",
                 mb: 3,
-                filter: theme.palette.mode === "dark" ? "brightness(1.1)" : "none",
+                filter:
+                  theme.palette.mode === "dark"
+                    ? "brightness(1.1)"
+                    : "none",
               }}
             />
           </motion.div>
@@ -263,6 +268,8 @@ export default function HomePage() {
                 display: "flex",
                 gap: 3,
                 px: 2,
+                flexWrap: "wrap",
+                justifyContent: "center",
               }}
             >
               {features.map((feature, index) => (
@@ -346,6 +353,18 @@ export default function HomePage() {
               ))}
             </Box>
           </motion.div>
+        </Box>
+
+        {/* SAVED TRIPS SECTION */}
+        <Box
+          sx={{
+            width: "100%",
+            maxWidth: 1200,
+            mt: 6,
+            zIndex: 1,
+          }}
+        >
+          <SavedTripsSection />
         </Box>
       </Box>
     </motion.div>

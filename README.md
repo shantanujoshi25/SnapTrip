@@ -1,70 +1,147 @@
-# Getting Started with Create React App
+SnapTrip — Plan Your Travel in a Snap
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+SnapTrip is an AI-powered travel planning app that generates personalized itineraries based on user preferences such as destination, dates, interests, budget, and accessibility needs. Users can save trips, regenerate plans, and export itineraries as PDF files.
 
-## Available Scripts
+✨ Features
 
-In the project directory, you can run:
+AI-generated travel itineraries (OpenAI backend)
 
-### `npm start`
+Multi-step Preferences → Itinerary flow with progress bar
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Modern UI with MUI and Framer Motion
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Save trips locally with localStorage
 
-### `npm test`
+Regenerate itinerary with one click
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+PDF export using jsPDF
 
-### `npm run build`
+Light/Dark theme support
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Fully responsive interface
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+🏗 Tech Stack
+Frontend
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+React (Create React App)
 
-### `npm run eject`
+Material UI
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Framer Motion
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+React Router
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+jsPDF
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Backend
 
-## Learn More
+Node.js + Express
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+OpenAI API
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+CORS + dotenv
 
-### Code Splitting
+📂 Project Structure
+snaptrip/
+│
+├── src/
+│   ├── App.js
+│   ├── HomePage.jsx
+│   ├── TripPreferencesPage.jsx
+│   ├── ItineraryPage.jsx
+│   ├── PageWrapper.jsx
+│   ├── PreferencesContext.jsx
+│   └── api/
+│       └── mockItinerary.js
+│
+├── public/
+│   ├── index.html
+│   ├── favicon.ico
+│   └── manifest.json
+│
+└── server/
+    ├── index.js
+    ├── package.json
+    └── .env
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+🚀 Getting Started
+1. Clone the Repository
+git clone <your-repo-url>
+cd snaptrip
 
-### Analyzing the Bundle Size
+🎨 Frontend Setup
+npm install
+npm start
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
 
-### Making a Progressive Web App
+Runs at:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+http://localhost:3000
 
-### Advanced Configuration
+🔧 Backend Setup
+cd server
+npm install
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
 
-### Deployment
+Create .env in /server:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+PORT=4000
+OPENAI_API_KEY=your-openai-key
 
-### `npm run build` fails to minify
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Start backend:
+
+npm start
+
+
+Runs at:
+
+http://localhost:4000
+
+🔗 API Details
+
+Frontend calls:
+
+POST /api/itinerary
+
+
+Backend returns:
+
+{
+  "days": [
+    {
+      "day": 1,
+      "title": "...",
+      "summary": "...",
+      "items": [...]
+    }
+  ]
+}
+
+📄 Exporting Itinerary
+
+Click Export PDF on the Itinerary page to download the current plan.
+
+💾 Saved Trips
+
+Trips are saved in the browser using localStorage and appear on the Home page under “Saved Trips”.
+
+🧪 Tests
+npm test
+
+📦 Build for Production
+npm run build
+
+✍️ Authors
+
+Shantanu
+
+Adityaraj
+
+Rishabh
+
+Mehul
+
+📜 License
+
+For academic use under CMPE 280, San Jose State University.
