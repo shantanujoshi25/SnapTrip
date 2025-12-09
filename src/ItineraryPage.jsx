@@ -8,14 +8,14 @@ import {
   Chip,
   Button,
   Stack,
-  Divider
+  Divider,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
 
 import { usePreferences } from "./PreferencesContext";
-import { generateMockItinerary } from "./api/mockItinerary";
 
 export default function ItineraryPage() {
   const theme = useTheme();
@@ -24,28 +24,42 @@ export default function ItineraryPage() {
   const [itinerary, setItinerary] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!preferences) {
-      // No preferences yet, redirect to planner
       navigate("/preferences");
       return;
     }
-
     fetchItinerary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function fetchItinerary() {
+  async function fetchItinerary() {
     if (!preferences) return;
     setLoading(true);
+    setError(null);
 
-    // Simulate "AI call" delay
-    setTimeout(() => {
-      const result = generateMockItinerary(preferences);
-      setItinerary(result);
+    try {
+      const res = await fetch("http://localhost:4000/api/itinerary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(preferences),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch itinerary");
+      }
+
+      const data = await res.json();
+      setItinerary(data.days || []);
+    } catch (err) {
+      console.error("fetchItinerary error:", err);
+      setItinerary([]);
+      setError("Could not generate itinerary. Please try again.");
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   }
 
   function handleSaveTrip() {
@@ -66,7 +80,7 @@ export default function ItineraryPage() {
       title: destination,
       dateRange: start && end ? `${start} to ${end}` : null,
       preferences,
-      itinerary
+      itinerary,
     };
 
     localStorage.setItem(
@@ -76,6 +90,72 @@ export default function ItineraryPage() {
 
     setSaving(false);
     alert("Trip saved to this browser.");
+  }
+
+  function handleExportPdf() {
+    if (!itinerary.length) {
+      alert("No itinerary to export yet.");
+      return;
+    }
+
+    const doc = new jsPDF();
+    let y = 10;
+
+    const dest =
+      preferences?.tripDetails?.destination?.trim() || "Your SnapTrip";
+    const start = preferences?.tripDetails?.startDate;
+    const end = preferences?.tripDetails?.endDate;
+
+    // Title
+    doc.setFontSize(16);
+    doc.text(`SnapTrip itinerary: ${dest}`, 10, y);
+    y += 8;
+
+    // Dates
+    if (start && end) {
+      doc.setFontSize(11);
+      doc.text(`Dates: ${start} to ${end}`, 10, y);
+      y += 8;
+    }
+
+    y += 4;
+    doc.setFontSize(11);
+
+    const lineHeight = 6;
+
+    const addLine = (text) => {
+      if (y > 280) {
+        doc.addPage();
+        y = 10;
+      }
+      doc.text(text, 10, y);
+      y += lineHeight;
+    };
+
+    itinerary.forEach((day) => {
+      addLine(`Day ${day.day}: ${day.title}`);
+      if (day.date) {
+        addLine(`  Date: ${day.date}`);
+      }
+      addLine(`  Summary: ${day.summary}`);
+
+      day.items?.forEach((item) => {
+        let line = `    - ${item.time}: ${item.title}`;
+        if (item.note) {
+          line += ` (${item.note})`;
+        }
+        addLine(line);
+      });
+
+      y += 2;
+    });
+
+    const safeDest = dest
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9\-]/g, "");
+
+    doc.save(`snaptrip-${safeDest || "itinerary"}.pdf`);
   }
 
   const destination = preferences?.tripDetails?.destination || "Your trip";
@@ -102,7 +182,7 @@ export default function ItineraryPage() {
           background:
             theme.palette.mode === "dark"
               ? "radial-gradient(circle at top, #1e293b, #020617)"
-              : "radial-gradient(circle at top, #e0f2fe, #eff6ff)"
+              : "radial-gradient(circle at top, #e0f2fe, #eff6ff)",
         }}
       >
         <Card
@@ -114,43 +194,81 @@ export default function ItineraryPage() {
             px: { xs: 3, md: 4 },
             py: { xs: 3, md: 4 },
             backdropFilter: "blur(16px)",
-            background: glassBg
+            background: glassBg,
           }}
         >
           <Stack
-            direction={{ xs: "column", md: "row" }}
-            justifyContent="space-between"
-            alignItems={{ xs: "flex-start", md: "center" }}
-            spacing={2}
-            sx={{ mb: 3 }}
-          >
-            <Box>
-              <Typography variant="overline" sx={{ opacity: 0.8 }}>
-                Step 3
-              </Typography>
-              <Typography variant="h4" fontWeight={700}>
-                Your SnapTrip itinerary
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 0.5 }}>
-                Destination: {destination}
-              </Typography>
-            </Box>
+  direction={{ xs: "column", md: "row" }}
+  justifyContent="space-between"
+  alignItems={{ xs: "flex-start", md: "center" }}
+  spacing={2}
+  sx={{ mb: 3 }}
+>
+  <Box>
+    <Typography
+      variant="caption"
+      sx={{
+        display: "inline-flex",
+        alignItems: "center",
+        mb: 0.5,
+        cursor: "pointer",
+        color:
+          theme.palette.mode === "dark"
+            ? "rgba(191,219,254,0.9)"
+            : "rgba(79,70,229,0.9)",
+        "&:hover": {
+          textDecoration: "underline",
+        },
+      }}
+      onClick={() => navigate("/preferences")}
+    >
+      ← Back to preferences
+    </Typography>
 
-            <Stack direction="row" spacing={1}>
-              <Button variant="outlined" onClick={fetchItinerary}>
-                Regenerate
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleSaveTrip}
-                disabled={saving || !itinerary.length}
-              >
-                {saving ? "Saving..." : "Save trip"}
-              </Button>
-            </Stack>
-          </Stack>
+    <Typography variant="overline" sx={{ opacity: 0.8 }}>
+      Step 3 · Itinerary
+    </Typography>
+    <Typography variant="h4" fontWeight={700}>
+      Your SnapTrip itinerary
+    </Typography>
+    <Typography variant="body2" sx={{ mt: 0.5 }}>
+      Destination: {destination}
+    </Typography>
+  </Box>
+
+  <Stack direction="row" spacing={1}>
+    <Button variant="outlined" onClick={fetchItinerary}>
+      Regenerate
+    </Button>
+    <Button
+      variant="contained"
+      onClick={handleSaveTrip}
+      disabled={saving || !itinerary.length}
+    >
+      {saving ? "Saving..." : "Save trip"}
+    </Button>
+    <Button
+      variant="outlined"
+      onClick={handleExportPdf}
+      disabled={!itinerary.length}
+    >
+      Export PDF
+    </Button>
+  </Stack>
+</Stack>
+
 
           <Divider sx={{ mb: 3 }} />
+
+          {error && (
+            <Typography
+              variant="body2"
+              color="error"
+              sx={{ mb: 2, fontWeight: 500 }}
+            >
+              {error}
+            </Typography>
+          )}
 
           {loading ? (
             <Box
@@ -159,7 +277,7 @@ export default function ItineraryPage() {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 2
+                gap: 2,
               }}
             >
               <motion.div
@@ -168,7 +286,7 @@ export default function ItineraryPage() {
                   height: 56,
                   borderRadius: "50%",
                   border: "4px solid rgba(148,163,184,0.4)",
-                  borderTopColor: theme.palette.primary.main
+                  borderTopColor: theme.palette.primary.main,
                 }}
                 animate={{ rotate: 360 }}
                 transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
@@ -190,7 +308,7 @@ export default function ItineraryPage() {
                     variant="outlined"
                     sx={{
                       borderRadius: 3,
-                      borderColor: "rgba(148,163,184,0.5)"
+                      borderColor: "rgba(148,163,184,0.5)",
                     }}
                   >
                     <CardContent>
@@ -218,14 +336,14 @@ export default function ItineraryPage() {
                       </Stack>
 
                       <Box sx={{ mt: 2 }}>
-                        {day.items.map((item, index) => (
+                        {day.items?.map((item, index) => (
                           <Box
                             key={index}
                             sx={{
                               display: "flex",
                               alignItems: "baseline",
                               gap: 1,
-                              mb: 1
+                              mb: 1,
                             }}
                           >
                             <Typography
@@ -257,7 +375,7 @@ export default function ItineraryPage() {
             </Stack>
           )}
 
-          {!loading && !itinerary.length && (
+          {!loading && !itinerary.length && !error && (
             <Typography variant="body2" sx={{ mt: 2 }}>
               No itinerary generated yet. Try clicking Regenerate.
             </Typography>

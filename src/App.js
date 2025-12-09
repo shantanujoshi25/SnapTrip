@@ -79,9 +79,6 @@ function Navbar({ mode, toggleTheme }) {
         {/* Nav Links */}
         <Box sx={{ display: { xs: "none", sm: "flex" }, gap: 3 }}>
           <NavLink label="Home" to="/" />
-          <NavLink label="Preferences" to="/preferences" />
-          <NavLink label="Itinerary" to="/itinerary" />
-          <NavLink label="Export" to="/export" />
         </Box>
 
         {/* Dark/Light Mode Toggle */}
@@ -223,15 +220,6 @@ function App() {
                     element={
                       <PageWrapper>
                         <ItineraryPage />
-                      </PageWrapper>
-                    }
-                  />
-
-                  <Route
-                    path="/export"
-                    element={
-                      <PageWrapper>
-                        <ExportPage />
                       </PageWrapper>
                     }
                   />
