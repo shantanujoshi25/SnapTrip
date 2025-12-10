@@ -9,13 +9,28 @@ import {
   Button,
   Stack,
   Divider,
+  IconButton,
+  Tooltip,
+  LinearProgress,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
+import {
+  Refresh as RefreshIcon,
+  Download as DownloadIcon,
+  BookmarkAdd as BookmarkAddIcon,
+  CalendarToday as CalendarTodayIcon,
+  FlightTakeoff as FlightTakeoffIcon,
+  AccessTime as AccessTimeIcon,
+  Map as MapIcon,
+} from "@mui/icons-material";
 
 import { usePreferences } from "./PreferencesContext";
+
+const MotionBox = motion(Box);
+const MotionCard = motion(Card);
 
 export default function ItineraryPage() {
   const theme = useTheme();
@@ -25,6 +40,12 @@ export default function ItineraryPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  const tripDetails = preferences?.tripDetails || {};
+  const destination = tripDetails.destination || "Your trip";
+  const start = tripDetails.startDate;
+  const end = tripDetails.endDate;
+  const pace = tripDetails.pace || preferences?.pace || "Balanced";
 
   useEffect(() => {
     if (!preferences) {
@@ -158,16 +179,29 @@ export default function ItineraryPage() {
     doc.save(`snaptrip-${safeDest || "itinerary"}.pdf`);
   }
 
-  const destination = preferences?.tripDetails?.destination || "Your trip";
-
   const glassBg =
     theme.palette.mode === "dark"
       ? "linear-gradient(135deg, rgba(15,23,42,0.96), rgba(30,64,175,0.95))"
       : "linear-gradient(135deg, rgba(255,255,255,0.96), rgba(219,234,254,0.96))";
 
+  const heroGlow =
+    theme.palette.mode === "dark"
+      ? "radial-gradient(circle at top, rgba(59,130,246,0.35), transparent 55%)"
+      : "radial-gradient(circle at top, rgba(59,130,246,0.18), transparent 60%)";
+
+  const totalDays = itinerary.length;
+
+  const timeChipColor = (time) => {
+    const t = (time || "").toLowerCase();
+    if (t.includes("morning")) return "success";
+    if (t.includes("afternoon")) return "info";
+    if (t.includes("evening") || t.includes("night")) return "secondary";
+    return "default";
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
@@ -181,95 +215,225 @@ export default function ItineraryPage() {
           justifyContent: "center",
           background:
             theme.palette.mode === "dark"
-              ? "radial-gradient(circle at top, #1e293b, #020617)"
-              : "radial-gradient(circle at top, #e0f2fe, #eff6ff)",
+              ? `radial-gradient(circle at top, #1e293b, #020617)`
+              : `radial-gradient(circle at top, #e0f2fe, #eff6ff)`,
+          position: "relative",
+          overflow: "hidden",
         }}
       >
-        <Card
-          elevation={10}
+        {/* subtle glow behind the card */}
+        <Box
           sx={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: heroGlow,
+            opacity: 0.9,
+            pointerEvents: "none",
+          }}
+        />
+
+        <Card
+          elevation={12}
+          sx={{
+            position: "relative",
             width: "100%",
-            maxWidth: 1100,
+            maxWidth: 1200,
             borderRadius: 4,
             px: { xs: 3, md: 4 },
             py: { xs: 3, md: 4 },
-            backdropFilter: "blur(16px)",
+            backdropFilter: "blur(18px)",
             background: glassBg,
+            boxShadow:
+              theme.palette.mode === "dark"
+                ? "0 24px 80px rgba(15,23,42,0.9)"
+                : "0 24px 80px rgba(15,23,42,0.25)",
           }}
         >
-          <Stack
-  direction={{ xs: "column", md: "row" }}
-  justifyContent="space-between"
-  alignItems={{ xs: "flex-start", md: "center" }}
-  spacing={2}
-  sx={{ mb: 3 }}
->
-  <Box>
-    <Typography
-      variant="caption"
-      sx={{
-        display: "inline-flex",
-        alignItems: "center",
-        mb: 0.5,
-        cursor: "pointer",
-        color:
-          theme.palette.mode === "dark"
-            ? "rgba(191,219,254,0.9)"
-            : "rgba(79,70,229,0.9)",
-        "&:hover": {
-          textDecoration: "underline",
-        },
-      }}
-      onClick={() => navigate("/preferences")}
-    >
-      ← Back to preferences
-    </Typography>
-
-    <Typography variant="overline" sx={{ opacity: 0.8 }}>
-      Step 3 · Itinerary
-    </Typography>
-    <Typography variant="h4" fontWeight={700}>
-      Your SnapTrip itinerary
-    </Typography>
-    <Typography variant="body2" sx={{ mt: 0.5 }}>
-      Destination: {destination}
-    </Typography>
-  </Box>
-
-  <Stack direction="row" spacing={1}>
-    <Button variant="outlined" onClick={fetchItinerary}>
-      Regenerate
-    </Button>
-    <Button
-      variant="contained"
-      onClick={handleSaveTrip}
-      disabled={saving || !itinerary.length}
-    >
-      {saving ? "Saving..." : "Save trip"}
-    </Button>
-    <Button
-      variant="outlined"
-      onClick={handleExportPdf}
-      disabled={!itinerary.length}
-    >
-      Export PDF
-    </Button>
-  </Stack>
-</Stack>
-
-
-          <Divider sx={{ mb: 3 }} />
-
-          {error && (
-            <Typography
-              variant="body2"
-              color="error"
-              sx={{ mb: 2, fontWeight: 500 }}
-            >
-              {error}
-            </Typography>
+          {loading && (
+            <LinearProgress
+              sx={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                top: 0,
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16,
+              }}
+            />
           )}
 
+          {/* Top header + actions */}
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            justifyContent="space-between"
+            alignItems={{ xs: "flex-start", md: "center" }}
+            spacing={2}
+            sx={{ mb: 3 }}
+          >
+            <Box>
+              <Typography
+                variant="caption"
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  mb: 0.5,
+                  cursor: "pointer",
+                  color:
+                    theme.palette.mode === "dark"
+                      ? "rgba(191,219,254,0.9)"
+                      : "rgba(79,70,229,0.9)",
+                  "&:hover": {
+                    textDecoration: "underline",
+                  },
+                }}
+                onClick={() => navigate("/preferences")}
+              >
+                ← Back to preferences
+              </Typography>
+
+              <Typography variant="overline" sx={{ opacity: 0.8 }}>
+                Step 3 · Curated Itinerary
+              </Typography>
+
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ mt: 0.5, flexWrap: "wrap", rowGap: 0.5 }}
+              >
+                <Typography variant="h4" fontWeight={700}>
+                  Your SnapTrip to {destination}
+                </Typography>
+
+                <Chip
+                  icon={<FlightTakeoffIcon sx={{ fontSize: 18 }} />}
+                  label={totalDays ? `${totalDays} day trip` : "Trip planned"}
+                  size="small"
+                  sx={{
+                    fontSize: 11,
+                    ml: { xs: 0, sm: 0.5 },
+                    mt: { xs: 0.5, sm: 0 },
+                  }}
+                />
+              </Stack>
+
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ mt: 1, flexWrap: "wrap", rowGap: 0.8 }}
+              >
+                {start && end && (
+                  <Chip
+                    icon={<CalendarTodayIcon sx={{ fontSize: 16 }} />}
+                    label={`${start} → ${end}`}
+                    size="small"
+                    variant="outlined"
+                  />
+                )}
+                <Chip
+                  icon={<AccessTimeIcon sx={{ fontSize: 16 }} />}
+                  label={`Pace: ${pace}`}
+                  size="small"
+                  variant="outlined"
+                />
+                {tripDetails.vibe && (
+                  <Chip
+                    icon={<MapIcon sx={{ fontSize: 16 }} />}
+                    label={tripDetails.vibe}
+                    size="small"
+                    variant="outlined"
+                  />
+                )}
+              </Stack>
+            </Box>
+
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{ alignSelf: { xs: "stretch", md: "auto" } }}
+            >
+              <Tooltip title="Regenerate itinerary">
+                <span>
+                  <IconButton
+                    onClick={fetchItinerary}
+                    disabled={loading}
+                    color="primary"
+                    size="large"
+                    sx={{
+                      borderRadius: 2,
+                      border: "1px solid rgba(148,163,184,0.7)",
+                    }}
+                  >
+                    <RefreshIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+
+              <Tooltip title="Save this trip in this browser">
+                <span>
+                  <IconButton
+                    onClick={handleSaveTrip}
+                    disabled={saving || !itinerary.length}
+                    color="primary"
+                    size="large"
+                    sx={{
+                      borderRadius: 2,
+                      border: "1px solid rgba(148,163,184,0.7)",
+                    }}
+                  >
+                    <BookmarkAddIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+
+              <Button
+                variant="contained"
+                onClick={handleExportPdf}
+                disabled={!itinerary.length}
+                startIcon={<DownloadIcon />}
+                sx={{
+                  borderRadius: 999,
+                  px: 2.5,
+                  textTransform: "none",
+                  fontWeight: 600,
+                }}
+              >
+                Export PDF
+              </Button>
+            </Stack>
+          </Stack>
+
+          <Divider sx={{ mb: 3, opacity: 0.7 }} />
+
+          {/* Error message */}
+          {error && (
+            <Card
+              variant="outlined"
+              sx={{
+                mb: 3,
+                borderRadius: 3,
+                borderColor: theme.palette.error.light,
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(248,113,113,0.08)"
+                    : "rgba(248,113,113,0.05)",
+              }}
+            >
+              <CardContent>
+                <Typography
+                  variant="subtitle2"
+                  color="error"
+                  sx={{ fontWeight: 600, mb: 0.5 }}
+                >
+                  Oops, something went wrong
+                </Typography>
+                <Typography variant="body2">{error}</Typography>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Loading state */}
           {loading ? (
             <Box
               sx={{
@@ -282,103 +446,308 @@ export default function ItineraryPage() {
             >
               <motion.div
                 style={{
-                  width: 56,
-                  height: 56,
+                  width: 64,
+                  height: 64,
                   borderRadius: "50%",
                   border: "4px solid rgba(148,163,184,0.4)",
                   borderTopColor: theme.palette.primary.main,
                 }}
                 animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 1,
+                  ease: "linear",
+                }}
               />
-              <Typography variant="body1">
-                Generating your itinerary...
+              <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                Crafting your perfect days in {destination}...
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{ opacity: 0.8, textAlign: "center", maxWidth: 360 }}
+              >
+                We’re using your dates, pace, and interests to stitch together a
+                personalized adventure.
               </Typography>
             </Box>
           ) : (
-            <Stack spacing={2.5}>
-              {itinerary.map((day) => (
-                <motion.div
-                  key={day.day}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
+            <>
+              {/* No data state */}
+              {!itinerary.length && !error && (
+                <Box
+                  sx={{
+                    py: 6,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 2,
+                  }}
                 >
-                  <Card
-                    variant="outlined"
-                    sx={{
-                      borderRadius: 3,
-                      borderColor: "rgba(148,163,184,0.5)",
-                    }}
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    No itinerary yet
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ maxWidth: 380, textAlign: "center", opacity: 0.8 }}
                   >
-                    <CardContent>
-                      <Stack
-                        direction={{ xs: "column", sm: "row" }}
-                        justifyContent="space-between"
-                        alignItems={{ xs: "flex-start", sm: "center" }}
-                        spacing={1}
-                      >
-                        <Box>
-                          <Typography variant="subtitle2" color="text.secondary">
-                            Day {day.day}
-                          </Typography>
-                          <Typography variant="h6">{day.title}</Typography>
-                          {day.date && (
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                            >
-                              {day.date}
-                            </Typography>
-                          )}
-                        </Box>
-                        <Chip label={day.summary} size="small" />
-                      </Stack>
+                    It looks like we don’t have a plan generated for this trip.
+                    Try regenerating your itinerary using the button above.
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    startIcon={<RefreshIcon />}
+                    onClick={fetchItinerary}
+                    sx={{ mt: 1 }}
+                  >
+                    Generate itinerary
+                  </Button>
+                </Box>
+              )}
 
-                      <Box sx={{ mt: 2 }}>
-                        {day.items?.map((item, index) => (
-                          <Box
-                            key={index}
-                            sx={{
-                              display: "flex",
-                              alignItems: "baseline",
-                              gap: 1,
-                              mb: 1,
-                            }}
-                          >
-                            <Typography
-                              variant="body2"
-                              sx={{ minWidth: 90, fontWeight: 600 }}
+              {/* Itinerary days */}
+              {!!itinerary.length && (
+                <Stack spacing={2.5}>
+                  {itinerary.map((day, idx) => (
+                    <MotionCard
+                      key={day.day ?? idx}
+                      variant="outlined"
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, delay: idx * 0.04 }}
+                      whileHover={{
+                        y: -3,
+                        boxShadow:
+                          theme.palette.mode === "dark"
+                            ? "0 20px 45px rgba(15,23,42,0.8)"
+                            : "0 20px 45px rgba(15,23,42,0.18)",
+                      }}
+                      sx={{
+                        borderRadius: 3,
+                        borderColor: "rgba(148,163,184,0.5)",
+                        overflow: "hidden",
+                        position: "relative",
+                        background:
+                          theme.palette.mode === "dark"
+                            ? "linear-gradient(135deg, rgba(15,23,42,0.98), rgba(30,64,175,0.85))"
+                            : "linear-gradient(135deg, rgba(248,250,252,0.98), rgba(219,234,254,0.95))",
+                      }}
+                    >
+                      {/* Accent gradient strip at top */}
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: 4,
+                          background:
+                            "linear-gradient(90deg, #38bdf8, #6366f1, #f97316)",
+                        }}
+                      />
+
+                      <CardContent sx={{ pt: 2.5 }}>
+                        <Stack
+                          direction={{ xs: "column", sm: "row" }}
+                          justifyContent="space-between"
+                          alignItems={{ xs: "flex-start", sm: "center" }}
+                          spacing={1.5}
+                          sx={{ mb: 2 }}
+                        >
+                          <Box>
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              alignItems="center"
+                              sx={{ mb: 0.5, flexWrap: "wrap", rowGap: 0.5 }}
                             >
-                              {item.time}
-                            </Typography>
-                            <Typography variant="body2">
-                              {item.title}
-                              {item.note && (
-                                <Typography
-                                  component="span"
-                                  variant="body2"
-                                  color="text.secondary"
-                                >
-                                  {" "}
-                                  - {item.note}
-                                </Typography>
+                              <Chip
+                                size="small"
+                                label={`Day ${day.day}`}
+                                sx={{
+                                  fontWeight: 600,
+                                  letterSpacing: 0.4,
+                                }}
+                              />
+                              {day.date && (
+                                <Chip
+                                  size="small"
+                                  icon={
+                                    <CalendarTodayIcon sx={{ fontSize: 16 }} />
+                                  }
+                                  label={day.date}
+                                  variant="outlined"
+                                />
                               )}
-                            </Typography>
-                          </Box>
-                        ))}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </Stack>
-          )}
+                            </Stack>
 
-          {!loading && !itinerary.length && !error && (
-            <Typography variant="body2" sx={{ mt: 2 }}>
-              No itinerary generated yet. Try clicking Regenerate.
-            </Typography>
+                            <Typography
+                              variant="h6"
+                              sx={{ fontWeight: 700, mb: 0.5 }}
+                            >
+                              {day.title}
+                            </Typography>
+                            {day.summary && (
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  maxWidth: 620,
+                                  opacity: 0.85,
+                                }}
+                              >
+                                {day.summary}
+                              </Typography>
+                            )}
+                          </Box>
+
+                          <Chip
+                            label="Curated day plan"
+                            size="small"
+                            sx={{
+                              textTransform: "uppercase",
+                              fontSize: 10,
+                              letterSpacing: 0.6,
+                              borderRadius: 999,
+                              border: "1px dashed rgba(148,163,184,0.8)",
+                            }}
+                          />
+                        </Stack>
+
+                        {/* Timeline of activities */}
+                        <Box
+                          sx={{
+                            mt: 1.5,
+                            display: "grid",
+                            gridTemplateColumns: { xs: "1fr", md: "1fr" },
+                            gap: 1,
+                          }}
+                        >
+                          <Box sx={{ position: "relative", pl: { xs: 0.5, sm: 1 } }}>
+                            {day.items?.map((item, index) => (
+                              <MotionBox
+                                key={index}
+                                initial={{ opacity: 0, x: 8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{
+                                  duration: 0.3,
+                                  delay: index * 0.05,
+                                }}
+                                sx={{
+                                  display: "flex",
+                                  position: "relative",
+                                  gap: 1.5,
+                                  pb:
+                                    index !== (day.items?.length ?? 0) - 1
+                                      ? 2
+                                      : 0,
+                                }}
+                              >
+                                {/* Vertical line */}
+                                <Box
+                                  sx={{
+                                    position: "relative",
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                  }}
+                                >
+                                  <Box
+                                    sx={{
+                                      width: 12,
+                                      display: "flex",
+                                      justifyContent: "center",
+                                    }}
+                                  >
+                                    <Box
+                                      sx={{
+                                        width: 10,
+                                        height: 10,
+                                        borderRadius: "50%",
+                                        border:
+                                          "2px solid rgba(148,163,184,0.8)",
+                                        backgroundColor:
+                                          theme.palette.mode === "dark"
+                                            ? "#020617"
+                                            : "#e0f2fe",
+                                      }}
+                                    />
+                                  </Box>
+
+                                  {index !== (day.items?.length ?? 0) - 1 && (
+                                    <Box
+                                      sx={{
+                                        position: "absolute",
+                                        top: 10,
+                                        left: "50%",
+                                        transform: "translateX(-50%)",
+                                        width: 2,
+                                        height: "100%",
+                                        bgcolor: "rgba(148,163,184,0.6)",
+                                      }}
+                                    />
+                                  )}
+                                </Box>
+
+                                {/* Content */}
+                                <Box sx={{ flex: 1 }}>
+                                  <Stack
+                                    direction="row"
+                                    spacing={1}
+                                    alignItems="center"
+                                    sx={{ mb: 0.5, flexWrap: "wrap" }}
+                                  >
+                                    {item.time && (
+                                      <Chip
+                                        size="small"
+                                        color={timeChipColor(item.time)}
+                                        icon={
+                                          <AccessTimeIcon
+                                            sx={{ fontSize: 15 }}
+                                          />
+                                        }
+                                        label={item.time}
+                                        sx={{
+                                          fontSize: 11,
+                                          height: 26,
+                                        }}
+                                      />
+                                    )}
+                                    <Typography
+                                      variant="subtitle2"
+                                      sx={{ fontWeight: 600 }}
+                                    >
+                                      {item.title}
+                                    </Typography>
+                                  </Stack>
+                                  {item.note && (
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        opacity: 0.9,
+                                        ml: 0.3,
+                                      }}
+                                    >
+                                      {item.note}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </MotionBox>
+                            ))}
+
+                            {!day.items?.length && (
+                              <Typography
+                                variant="body2"
+                                sx={{ opacity: 0.75, fontStyle: "italic", ml: 2 }}
+                              >
+                                No specific activities listed for this day.
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </MotionCard>
+                  ))}
+                </Stack>
+              )}
+            </>
           )}
         </Card>
       </Box>
