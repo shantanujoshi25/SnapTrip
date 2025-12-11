@@ -1,5 +1,5 @@
-// TripPreferencesPage.jsx (FINAL VERSION WITH DESTINATION + DATES + AI CUSTOMIZATION)
-import React, { useState } from "react";
+// TripPreferencesPage.jsx (react-hook-form + zod)
+import React from "react";
 import {
   Box,
   Typography,
@@ -14,7 +14,7 @@ import {
   Card,
   Divider,
   useTheme,
-  TextField
+  TextField,
 } from "@mui/material";
 
 import { useNavigate } from "react-router-dom";
@@ -29,6 +29,10 @@ import NightlifeIcon from "@mui/icons-material/Nightlife";
 import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 
+import { useForm, Controller } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
 const interestsList = [
   { label: "Nature", icon: <LocalFloristIcon /> },
   { label: "Museums", icon: <MuseumIcon /> },
@@ -39,67 +43,102 @@ const interestsList = [
   { label: "Shopping", icon: <ShoppingBagIcon /> },
 ];
 
+// Zod schema for form validation
+const PreferencesSchema = z.object({
+  destination: z
+    .string()
+    .min(2, "Destination is required and should be at least 2 characters."),
+  startDate: z.string().min(1, "Start date is required."),
+  endDate: z.string().min(1, "End date is required."),
+  customNotes: z.string().max(1000).optional().or(z.literal("")),
+  tripPace: z.enum(["relaxed", "balanced", "fast"], {
+    required_error: "Please choose a trip pace.",
+  }),
+  interests: z
+    .array(z.string())
+    .min(1, "Select at least one interest.")
+    .optional()
+    .transform((val) => val ?? []),
+  budget: z
+    .number()
+    .min(1)
+    .max(3),
+  accessibility: z.object({
+    walkable: z.boolean(),
+    wheelchair: z.boolean(),
+    noStairs: z.boolean(),
+  }),
+  groupType: z.enum(["solo", "couple", "family", "friends"], {
+    required_error: "Please select who you are traveling with.",
+  }),
+});
+
 export default function TripPreferencesPage() {
   const theme = useTheme();
   const navigate = useNavigate();
-
-  // NEW FIELDS
-  const [destination, setDestination] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [customNotes, setCustomNotes] = useState("");
-
-  // EXISTING FIELDS
-  const [tripPace, setTripPace] = useState("balanced");
-  const [interests, setInterests] = useState([]);
-  const [budget, setBudget] = useState(2);
-  const [accessibility, setAccessibility] = useState({
-    walkable: false,
-    wheelchair: false,
-    noStairs: false,
-  });
-  const [groupType, setGroupType] = useState("solo");
-
   const { setPreferences } = usePreferences();
 
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    watch,
+    setValue,
+  } = useForm({
+    resolver: zodResolver(PreferencesSchema),
+    defaultValues: {
+      destination: "",
+      startDate: "",
+      endDate: "",
+      customNotes: "",
+      tripPace: "balanced",
+      interests: [],
+      budget: 2,
+      accessibility: {
+        walkable: false,
+        wheelchair: false,
+        noStairs: false,
+      },
+      groupType: "solo",
+    },
+  });
+
+  const selectedInterests = watch("interests");
+
   const toggleInterest = (label) => {
-    setInterests((prev) =>
-      prev.includes(label) ? prev.filter((i) => i !== label) : [...prev, label]
-    );
+    const current = selectedInterests || [];
+    const exists = current.includes(label);
+    const next = exists
+      ? current.filter((i) => i !== label)
+      : [...current, label];
+
+    setValue("interests", next, { shouldValidate: true, shouldDirty: true });
   };
 
-  // JSON PAYLOAD BUILDER
-  const buildPayload = () => {
-    return {
+  const onSubmit = (values) => {
+    const payload = {
       tripDetails: {
-        destination,
-        startDate,
-        endDate,
+        destination: values.destination,
+        startDate: values.startDate,
+        endDate: values.endDate,
       },
       userPreferences: {
-        tripPace,
-        interests,
-        budgetLevel: budget,
+        tripPace: values.tripPace,
+        interests: values.interests,
+        budgetLevel: values.budget,
         accessibility: {
-          walkableRoutes: accessibility.walkable,
-          wheelchairFriendly: accessibility.wheelchair,
-          avoidStairs: accessibility.noStairs,
+          walkableRoutes: values.accessibility.walkable,
+          wheelchairFriendly: values.accessibility.wheelchair,
+          avoidStairs: values.accessibility.noStairs,
         },
-        groupType,
+        groupType: values.groupType,
       },
-      customAIInstructions: customNotes,
+      customAIInstructions: values.customNotes,
     };
-  };
 
-  // WHEN USER CLICKS CONTINUE
-  const handleContinue = () => {
-    const payload = buildPayload();
-
-    // Save to global context
     setPreferences(payload);
-
     console.log("JSON Payload:", JSON.stringify(payload, null, 2));
-
     navigate("/itinerary");
   };
 
@@ -109,7 +148,11 @@ export default function TripPreferencesPage() {
       : "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(238,242,255,0.96))";
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+    >
       <Box
         sx={{
           minHeight: "100vh",
@@ -179,182 +222,288 @@ export default function TripPreferencesPage() {
             Trip Preferences
           </Typography>
 
-          {/* DESTINATION */}
-          <TextField
-            label="Destination"
-            placeholder="Where do you want to go?"
-            fullWidth
-            value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-            sx={{ mb: 3 }}
-          />
-
-          {/* DATES */}
-          <TextField
-            label="Start Date"
-            type="date"
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            sx={{ mb: 3 }}
-          />
-
-          <TextField
-            label="End Date"
-            type="date"
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            sx={{ mb: 4 }}
-          />
-
-          {/* CUSTOM AI NOTES */}
-          <Section title="Customize your trip using AI" subtitle="Optional: Additional preferences, constraints, or instructions.">
+          {/* FORM WRAPPER */}
+          <Box
+            component="form"
+            noValidate
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            {/* DESTINATION */}
             <TextField
-              placeholder="Example: Avoid early mornings, add beaches, prefer vegetarian restaurants..."
-              multiline
-              minRows={3}
+              label="Destination"
+              placeholder="Where do you want to go?"
               fullWidth
-              value={customNotes}
-              onChange={(e) => setCustomNotes(e.target.value)}
-              sx={{
-                mb: 3,
-                background: "rgba(255,255,255,0.35)",
-                borderRadius: "12px",
-                "& .MuiInputBase-root": { backdropFilter: "blur(6px)" },
-              }}
+              sx={{ mb: 1 }}
+              {...register("destination")}
+              error={!!errors.destination}
+              helperText={errors.destination?.message}
             />
-          </Section>
 
-          <Divider sx={{ my: 3 }} />
+            {/* DATES */}
+            <TextField
+              label="Start Date"
+              type="date"
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              sx={{ mb: 1 }}
+              {...register("startDate")}
+              error={!!errors.startDate}
+              helperText={errors.startDate?.message}
+            />
 
-          {/* TRIP PACE */}
-          <Section title="Trip pace">
-            <ToggleButtonGroup
-              exclusive
-              value={tripPace}
-              onChange={(e, v) => v && setTripPace(v)}
-              sx={{
-                flexWrap: "wrap",
-                "& .MuiToggleButton-root": { px: 3, py: 1.2, m: 0.5, borderRadius: "999px" },
-              }}
+            <TextField
+              label="End Date"
+              type="date"
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              sx={{ mb: 3 }}
+              {...register("endDate")}
+              error={!!errors.endDate}
+              helperText={errors.endDate?.message}
+            />
+
+            {/* CUSTOM AI NOTES */}
+            <Section
+              title="Customize your trip using AI"
+              subtitle="Optional: Additional preferences, constraints, or instructions."
             >
-              <ToggleButton value="relaxed">Relaxed</ToggleButton>
-              <ToggleButton value="balanced">Balanced</ToggleButton>
-              <ToggleButton value="fast">Fast-paced</ToggleButton>
-            </ToggleButtonGroup>
-          </Section>
+              <TextField
+                placeholder="Example: Avoid early mornings, add beaches, prefer vegetarian restaurants..."
+                multiline
+                minRows={3}
+                fullWidth
+                {...register("customNotes")}
+                error={!!errors.customNotes}
+                helperText={errors.customNotes?.message}
+                sx={{
+                  mb: 3,
+                  background: "rgba(255,255,255,0.35)",
+                  borderRadius: "12px",
+                  "& .MuiInputBase-root": { backdropFilter: "blur(6px)" },
+                }}
+              />
+            </Section>
 
-          <Divider sx={{ my: 3 }} />
+            <Divider sx={{ my: 3 }} />
 
-          {/* INTERESTS */}
-          <Section title="Interests" subtitle="Pick a few things you enjoy.">
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.4 }}>
-              {interestsList.map((item) => (
-                <Chip
-                  key={item.label}
-                  icon={item.icon}
-                  label={item.label}
-                  clickable
-                  onClick={() => toggleInterest(item.label)}
-                  sx={{
-                    px: 1.6,
-                    py: 0.4,
-                    borderRadius: "999px",
-                    backgroundColor: interests.includes(item.label)
-                      ? theme.palette.primary.main
-                      : "rgba(255,255,255,0.1)",
-                    color: interests.includes(item.label) ? "#fff" : theme.palette.text.primary,
-                    transition: "0.25s",
-                    "&:hover": { transform: "scale(1.05)" },
-                  }}
-                />
-              ))}
-            </Box>
-          </Section>
+            {/* TRIP PACE */}
+            <Section title="Trip pace">
+              <Controller
+                name="tripPace"
+                control={control}
+                render={({ field }) => (
+                  <>
+                    <ToggleButtonGroup
+                      exclusive
+                      value={field.value}
+                      onChange={(_, value) => value && field.onChange(value)}
+                      sx={{
+                        flexWrap: "wrap",
+                        "& .MuiToggleButton-root": {
+                          px: 3,
+                          py: 1.2,
+                          m: 0.5,
+                          borderRadius: "999px",
+                        },
+                      }}
+                    >
+                      <ToggleButton value="relaxed">Relaxed</ToggleButton>
+                      <ToggleButton value="balanced">Balanced</ToggleButton>
+                      <ToggleButton value="fast">Fast-paced</ToggleButton>
+                    </ToggleButtonGroup>
+                    {errors.tripPace && (
+                      <Typography
+                        variant="caption"
+                        color="error"
+                        sx={{ display: "block", mt: 0.5 }}
+                      >
+                        {errors.tripPace.message}
+                      </Typography>
+                    )}
+                  </>
+                )}
+              />
+            </Section>
 
-          <Divider sx={{ my: 3 }} />
+            <Divider sx={{ my: 3 }} />
 
-          {/* BUDGET */}
-          <Section title="Budget level">
-            <Slider
-              value={budget}
-              onChange={(e, v) => setBudget(v)}
-              min={1}
-              max={3}
-              marks={[
-                { value: 1, label: "$" },
-                { value: 2, label: "$$" },
-                { value: 3, label: "$$$" },
-              ]}
-              valueLabelDisplay="auto"
-              sx={{ maxWidth: 300 }}
-            />
-          </Section>
+            {/* INTERESTS */}
+            <Section title="Interests" subtitle="Pick a few things you enjoy.">
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.4 }}>
+                {interestsList.map((item) => (
+                  <Chip
+                    key={item.label}
+                    icon={item.icon}
+                    label={item.label}
+                    clickable
+                    onClick={() => toggleInterest(item.label)}
+                    sx={{
+                      px: 1.6,
+                      py: 0.4,
+                      borderRadius: "999px",
+                      backgroundColor: selectedInterests?.includes(item.label)
+                        ? theme.palette.primary.main
+                        : "rgba(255,255,255,0.1)",
+                      color: selectedInterests?.includes(item.label)
+                        ? "#fff"
+                        : theme.palette.text.primary,
+                      transition: "0.25s",
+                      "&:hover": { transform: "scale(1.05)" },
+                    }}
+                  />
+                ))}
+              </Box>
+              {errors.interests && (
+                <Typography
+                  variant="caption"
+                  color="error"
+                  sx={{ display: "block", mt: 0.5 }}
+                >
+                  {errors.interests.message}
+                </Typography>
+              )}
+            </Section>
 
-          <Divider sx={{ my: 3 }} />
+            <Divider sx={{ my: 3 }} />
 
-          {/* ACCESSIBILITY */}
-          <Section title="Accessibility options">
-            <FormGroup>
-              {[
-                { label: "Prefer walkable routes", key: "walkable" },
-                { label: "Wheelchair-friendly", key: "wheelchair" },
-                { label: "Avoid long staircases", key: "noStairs" },
-              ].map((item) => (
-                <FormControlLabel
-                  key={item.key}
-                  control={
-                    <Checkbox
-                      checked={accessibility[item.key]}
-                      onChange={(e) =>
-                        setAccessibility({ ...accessibility, [item.key]: e.target.checked })
+            {/* BUDGET */}
+            <Section title="Budget level">
+              <Controller
+                name="budget"
+                control={control}
+                render={({ field }) => (
+                  <Slider
+                    {...field}
+                    value={field.value}
+                    onChange={(_, value) => field.onChange(value)}
+                    min={1}
+                    max={3}
+                    marks={[
+                      { value: 1, label: "$" },
+                      { value: 2, label: "$$" },
+                      { value: 3, label: "$$$" },
+                    ]}
+                    valueLabelDisplay="auto"
+                    sx={{ maxWidth: 300 }}
+                  />
+                )}
+              />
+            </Section>
+
+            <Divider sx={{ my: 3 }} />
+
+            {/* ACCESSIBILITY */}
+            <Section title="Accessibility options">
+              <FormGroup>
+                <Controller
+                  name="accessibility.walkable"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
                       }
+                      label="Prefer walkable routes"
                     />
-                  }
-                  label={item.label}
+                  )}
                 />
-              ))}
-            </FormGroup>
-          </Section>
+                <Controller
+                  name="accessibility.wheelchair"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                      }
+                      label="Wheelchair-friendly"
+                    />
+                  )}
+                />
+                <Controller
+                  name="accessibility.noStairs"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                      }
+                      label="Avoid long staircases"
+                    />
+                  )}
+                />
+              </FormGroup>
+            </Section>
 
-          <Divider sx={{ my: 3 }} />
+            <Divider sx={{ my: 3 }} />
 
-          {/* GROUP TYPE */}
-          <Section title="Who are you traveling with?">
-            <ToggleButtonGroup
-              exclusive
-              value={groupType}
-              onChange={(e, v) => v && setGroupType(v)}
-              sx={{
-                flexWrap: "wrap",
-                "& .MuiToggleButton-root": { px: 3, py: 1.2, m: 0.5, borderRadius: "999px" },
-              }}
-            >
-              <ToggleButton value="solo">Solo</ToggleButton>
-              <ToggleButton value="couple">Couple</ToggleButton>
-              <ToggleButton value="family">Family</ToggleButton>
-              <ToggleButton value="friends">Friends</ToggleButton>
-            </ToggleButtonGroup>
-          </Section>
+            {/* GROUP TYPE */}
+            <Section title="Who are you traveling with?">
+              <Controller
+                name="groupType"
+                control={control}
+                render={({ field }) => (
+                  <>
+                    <ToggleButtonGroup
+                      exclusive
+                      value={field.value}
+                      onChange={(_, value) => value && field.onChange(value)}
+                      sx={{
+                        flexWrap: "wrap",
+                        "& .MuiToggleButton-root": {
+                          px: 3,
+                          py: 1.2,
+                          m: 0.5,
+                          borderRadius: "999px",
+                        },
+                      }}
+                    >
+                      <ToggleButton value="solo">Solo</ToggleButton>
+                      <ToggleButton value="couple">Couple</ToggleButton>
+                      <ToggleButton value="family">Family</ToggleButton>
+                      <ToggleButton value="friends">Friends</ToggleButton>
+                    </ToggleButtonGroup>
+                    {errors.groupType && (
+                      <Typography
+                        variant="caption"
+                        color="error"
+                        sx={{ display: "block", mt: 0.5 }}
+                      >
+                        {errors.groupType.message}
+                      </Typography>
+                    )}
+                  </>
+                )}
+              />
+            </Section>
 
-          {/* CONTINUE BUTTON */}
-          <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end" }}>
-            <Button
-              variant="contained"
-              onClick={handleContinue}
-              sx={{
-                px: 4,
-                py: 1.4,
-                borderRadius: "999px",
-                background: "linear-gradient(135deg, #6A5ACD, #7C8CFF)",
-                "&:hover": { background: "linear-gradient(135deg, #5A4BC0, #6A7CFF)" },
-              }}
-            >
-              Continue to itinerary
-            </Button>
+            {/* CONTINUE BUTTON */}
+            <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={isSubmitting}
+                sx={{
+                  px: 4,
+                  py: 1.4,
+                  borderRadius: "999px",
+                  background: "linear-gradient(135deg, #6A5ACD, #7C8CFF)",
+                  "&:hover": {
+                    background: "linear-gradient(135deg, #5A4BC0, #6A7CFF)",
+                  },
+                }}
+              >
+                {isSubmitting ? "Planning..." : "Continue to itinerary"}
+              </Button>
+            </Box>
           </Box>
         </Card>
       </Box>
@@ -366,7 +515,9 @@ export default function TripPreferencesPage() {
 function Section({ title, subtitle, children }) {
   return (
     <Box sx={{ mb: 2 }}>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{title}</Typography>
+      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+        {title}
+      </Typography>
       {subtitle && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
           {subtitle}
