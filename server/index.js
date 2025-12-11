@@ -40,39 +40,82 @@ app.post("/api/itinerary", async (req, res) => {
     const destination = preferences.tripDetails.destination;
 
     const prompt = `
-You are an expert travel planner. Generate a structured multi-day itinerary as JSON.
+You are an expert travel planner with deep knowledge of global destinations, local attractions, neighborhoods, food culture, transportation patterns, and typical tourist behaviors.
 
-User preferences (JSON):
+Your job is to create a realistic, personalized, multi-day itinerary based on the user's preferences below.
+
+USER PREFERENCES (JSON):
 ${JSON.stringify(preferences, null, 2)}
 
-Rules:
-- The trip is to: ${destination}
-- Use the start and end dates to determine the number of days.
-- Respect trip pace: more activities for "fast", fewer for "relaxed".
-- Use interests (like food, museums, nightlife, nature) to customize activities.
-- Suggest specific attractions and neighborhoods relevant to the actual destination, not generic ones.
-- For small or unknown cities, still propose plausible activities using the country/region if needed.
-- Always respond with ONLY valid JSON, no explanation, no markdown.
+---------------------------------------------
+IMPORTANT RULES YOU MUST FOLLOW
+---------------------------------------------
 
-Required JSON shape:
+1. DESTINATION-SPECIFIC DETAILS
+- Suggest **real attractions**, **landmarks**, **local food spots**, **neighborhoods**, and **experiences** unique to the destination.
+- If the city is small or lesser-known, propose the closest well-known attractions, regional specialties, and realistic activities.
+
+2. DATE-BASED DAY COUNT
+- Calculate number of days using startDate and endDate.
+- Each day must correspond to a unique date (if dates are provided).
+
+3. PACE ADJUSTMENT
+- "relaxed": 3–4 activities/day with more free time.
+- "balanced": 4–5 activities/day.
+- "fast": 6–7 activities/day with energetic scheduling.
+
+4. INTERESTS-BASED CUSTOMIZATION
+Match activities to interests such as:
+- Food → street food, markets, local dishes, famous restaurants
+- History → museums, monuments, guided tours
+- Nature → parks, viewpoints, hiking trails
+- Nightlife → bars, districts, events
+- Adventure → cycling, water sports, adrenaline activities
+- Shopping → markets, boutiques, malls
+
+5. ACCESSIBILITY NEEDS
+If preferences include:
+- wheelchair: avoid stairs, steep areas, inaccessible historic buildings
+- walkable: focus on compact, walk-friendly neighborhoods
+- noStairs: ensure activities support minimal elevation/climbing
+
+6. GROUP TYPE PERSONALIZATION
+- solo: flexible, exploratory suggestions
+- couple: romantic spots, scenic viewpoints, cozy restaurants
+- family: kid-friendly attractions
+- friends: lively districts, group activities
+
+7. OUTPUT FORMAT (REQUIRED)
+Return ONLY valid JSON matching EXACTLY the structure:
+
 {
   "days": [
     {
       "day": 1,
-      "title": "Short title for the day",
+      "title": "Short descriptive title",
       "date": "YYYY-MM-DD or null",
-      "summary": "1 sentence overview of the day",
+      "summary": "One-sentence overview of what this day focuses on.",
       "items": [
         {
           "time": "Morning | Afternoon | Evening | Night",
-          "title": "Activity title",
-          "note": "Optional additional detail"
+          "title": "Activity title unique to the destination",
+          "note": "Optional helpful detail or tip"
         }
       ]
     }
   ]
 }
+
+8. QUALITY REQUIREMENTS
+- Absolutely NO generic activities like "walk around downtown" or "visit a museum" without naming the actual place.
+- Every activity must be destination-specific and meaningful.
+- Keep the language friendly, concise, and travel-guide accurate.
+
+---------------------------------------------
+
+Now create the full itinerary as JSON only.
 `;
+
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
