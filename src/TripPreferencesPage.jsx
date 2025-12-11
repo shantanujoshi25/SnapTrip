@@ -157,7 +157,7 @@ export default function TripPreferencesPage() {
         sx={{
           minHeight: "100vh",
           width: "100%",
-          padding: { xs: 3, md: 6 },
+          padding: { xs: 2, sm: 3, md: 6 },
           display: "flex",
           justifyContent: "center",
           alignItems: "flex-start",
@@ -206,19 +206,19 @@ export default function TripPreferencesPage() {
           sx={{
             width: "100%",
             maxWidth: 900,
-            borderRadius: 4,
-            px: { xs: 3, md: 5 },
-            py: { xs: 3, md: 4 },
+            borderRadius: { xs: 3, md: 4 },
+            px: { xs: 2, sm: 3, md: 5 },
+            py: { xs: 3, sm: 3.5, md: 4 },
             zIndex: 1,
             backdropFilter: "blur(22px)",
             background: glassBg,
           }}
         >
-          <Typography variant="overline" sx={{ opacity: 0.75 }}>
+          <Typography variant="overline" sx={{ opacity: 0.75, fontSize: { xs: "0.7rem", sm: "0.75rem" } }}>
             STEP 2
           </Typography>
 
-          <Typography variant="h4" fontWeight={700} sx={{ mb: 3 }}>
+          <Typography variant="h4" fontWeight={700} sx={{ mb: { xs: 2, sm: 3 }, fontSize: { xs: "1.75rem", sm: "2rem", md: "2.125rem" } }}>
             Trip Preferences
           </Typography>
 
@@ -486,16 +486,19 @@ export default function TripPreferencesPage() {
             </Section>
 
             {/* CONTINUE BUTTON */}
-            <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end" }}>
+            <Box sx={{ mt: { xs: 3, sm: 4 }, display: "flex", justifyContent: { xs: "center", sm: "flex-end" } }}>
               <Button
                 type="submit"
                 variant="contained"
                 disabled={isSubmitting}
+                fullWidth
                 sx={{
-                  px: 4,
-                  py: 1.4,
+                  px: { xs: 3, sm: 4 },
+                  py: { xs: 1.3, sm: 1.4 },
                   borderRadius: "999px",
                   background: "linear-gradient(135deg, #6A5ACD, #7C8CFF)",
+                  maxWidth: { xs: "100%", sm: "auto" },
+                  fontSize: { xs: "0.95rem", sm: "1rem" },
                   "&:hover": {
                     background: "linear-gradient(135deg, #5A4BC0, #6A7CFF)",
                   },

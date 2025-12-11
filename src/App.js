@@ -32,7 +32,6 @@ import { PreferencesProvider } from "./PreferencesContext";
 import HomePage from "./HomePage";
 import TripPreferencesPage from "./TripPreferencesPage";
 import ItineraryPage from "./ItineraryPage";
-import ExportPage from "./ExportPage";
 
 /* ------------------ NAVBAR ------------------ */
 function Navbar({ mode, toggleTheme }) {
@@ -194,33 +193,36 @@ function App() {
           <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
             <Navbar mode={mode} toggleTheme={toggleTheme} />
 
-            <Box component="main" sx={{ flexGrow: 1 }}>
+            <Box
+              component="main"
+              sx={{
+                flexGrow: 1,
+              }}
+            >
               <AnimatePresence mode="wait">
                 <Routes>
-                  <Route
-                    path="/"
-                    element={
-                      <PageWrapper>
-                        <HomePage />
-                      </PageWrapper>
-                    }
-                  />
+                  {/* HomePage - No PageWrapper for full-width landing page */}
+                  <Route path="/" element={<HomePage />} />
 
                   <Route
                     path="/preferences"
                     element={
-                      <PageWrapper>
-                        <TripPreferencesPage />
-                      </PageWrapper>
+                      <Box sx={{ px: { xs: 1.5, sm: 2, md: 3, lg: 4 }, py: { xs: 1, sm: 1.5, md: 2 } }}>
+                        <PageWrapper>
+                          <TripPreferencesPage />
+                        </PageWrapper>
+                      </Box>
                     }
                   />
 
                   <Route
                     path="/itinerary"
                     element={
-                      <PageWrapper>
-                        <ItineraryPage />
-                      </PageWrapper>
+                      <Box sx={{ px: { xs: 1.5, sm: 2, md: 3, lg: 4 }, py: { xs: 1, sm: 1.5, md: 2 } }}>
+                        <PageWrapper>
+                          <ItineraryPage />
+                        </PageWrapper>
+                      </Box>
                     }
                   />
                 </Routes>

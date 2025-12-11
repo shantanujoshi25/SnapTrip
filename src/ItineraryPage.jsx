@@ -174,7 +174,7 @@ export default function ItineraryPage() {
     const safeDest = dest
       .toLowerCase()
       .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9\-]/g, "");
+      .replace(/[^a-z0-9-]/g, "");
 
     doc.save(`snaptrip-${safeDest || "itinerary"}.pdf`);
   }
@@ -301,7 +301,7 @@ export default function ItineraryPage() {
                 alignItems="center"
                 sx={{ mt: 0.5, flexWrap: "wrap", rowGap: 0.5 }}
               >
-                <Typography variant="h4" fontWeight={700}>
+                <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}>
                   Your SnapTrip to {destination}
                 </Typography>
 
@@ -310,7 +310,7 @@ export default function ItineraryPage() {
                   label={totalDays ? `${totalDays} day trip` : "Trip planned"}
                   size="small"
                   sx={{
-                    fontSize: 11,
+                    fontSize: { xs: 10, sm: 11 },
                     ml: { xs: 0, sm: 0.5 },
                     mt: { xs: 0.5, sm: 0 },
                   }}
@@ -351,7 +351,7 @@ export default function ItineraryPage() {
               direction="row"
               spacing={1}
               alignItems="center"
-              sx={{ alignSelf: { xs: "stretch", md: "auto" } }}
+              sx={{ alignSelf: { xs: "stretch", md: "auto" }, flexWrap: "wrap" }}
             >
               <Tooltip title="Regenerate itinerary">
                 <span>
@@ -363,9 +363,11 @@ export default function ItineraryPage() {
                     sx={{
                       borderRadius: 2,
                       border: "1px solid rgba(148,163,184,0.7)",
+                      width: { xs: 44, sm: 48 },
+                      height: { xs: 44, sm: 48 },
                     }}
                   >
-                    <RefreshIcon />
+                    <RefreshIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
                   </IconButton>
                 </span>
               </Tooltip>
@@ -380,9 +382,11 @@ export default function ItineraryPage() {
                     sx={{
                       borderRadius: 2,
                       border: "1px solid rgba(148,163,184,0.7)",
+                      width: { xs: 44, sm: 48 },
+                      height: { xs: 44, sm: 48 },
                     }}
                   >
-                    <BookmarkAddIcon />
+                    <BookmarkAddIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
                   </IconButton>
                 </span>
               </Tooltip>
@@ -394,9 +398,11 @@ export default function ItineraryPage() {
                 startIcon={<DownloadIcon />}
                 sx={{
                   borderRadius: 999,
-                  px: 2.5,
+                  px: { xs: 2, sm: 2.5 },
+                  py: { xs: 0.8, sm: 1 },
                   textTransform: "none",
                   fontWeight: 600,
+                  fontSize: { xs: "0.85rem", sm: "0.95rem" },
                 }}
               >
                 Export PDF
@@ -692,7 +698,7 @@ export default function ItineraryPage() {
                                     direction="row"
                                     spacing={1}
                                     alignItems="center"
-                                    sx={{ mb: 0.5, flexWrap: "wrap" }}
+                                    sx={{ mb: 0.5, flexWrap: "wrap", rowGap: 0.5 }}
                                   >
                                     {item.time && (
                                       <Chip
