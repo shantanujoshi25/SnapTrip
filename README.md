@@ -94,7 +94,9 @@ You don't have to ever use eject. The curated feature set is suitable for small 
 ## Screenshots
 
 ![Home Page](./screenshots/home.png)
+
 ![Preferences Page](./screenshots/preferences.png)
+
 ![Itinerary Page](./screenshots/itinerary.png)
 
 ---
@@ -111,6 +113,7 @@ Lighthouse scores measured via Chrome DevTools:
 * Performance (Preferences Page): 97 / 100
 ```
 ![Lighthouse Report](./screenshots/lighthouse_home.png)
+
 ![Lighthouse Report](./screenshots/lighthouse_preferences.png)
 
 ---
